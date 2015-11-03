@@ -1,5 +1,7 @@
 package org.tdd2;
 
+import org.tdd2.exceptions.InvalidOrderException;
+
 import java.util.UUID;
 
 public class OrderService {
@@ -10,6 +12,10 @@ public class OrderService {
     }
 
     public UUID placeOrder(UUID customerId, ShoppingCart shoppingCart) {
+        if(!shoppingCart.getItems().stream().allMatch(item -> item.getQuantity() != 0)) {
+            throw new InvalidOrderException();
+        }
+
         Order order = new Order();
         return _orderDataService.save(order);
     }
