@@ -73,4 +73,15 @@ public class Address {
         result = 31 * result + (zip != null ? zip.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "streetAddressOne='" + streetAddressOne + '\'' +
+                ", streetAddressTwo='" + streetAddressTwo + '\'' +
+                ", city='" + city + '\'' +
+                ", state='" + state + '\'' +
+                ", zip='" + zip + '\'' +
+                '}';
+    }
 }
