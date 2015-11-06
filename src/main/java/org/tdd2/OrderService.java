@@ -27,7 +27,14 @@ public class OrderService {
 
         Customer customer = customerService.getCustomer(customerId);
 
-        UUID OFSSessionId = orderFulfillmentService.openSession(OFS_USERNAME,OFS_PASSWORD);
+        placeOrderWithFulfillmentService(shoppingCart, customer);
+
+        Order order = new Order();
+        return orderDataService.save(order);
+    }
+
+    private void placeOrderWithFulfillmentService(ShoppingCart shoppingCart, Customer customer) {
+        UUID OFSSessionId = openOrderFulfillmentSession();
 
         ShoppingCartItem firstItem = shoppingCart.getItems().get(0);
 
@@ -37,9 +44,14 @@ public class OrderService {
         orderForOFS.put(firstItem.getItemId(),firstItem.getQuantity());
         orderFulfillmentService.placeOrder(OFSSessionId,orderForOFS,customer.getShippingAddress().toString());
 
-        orderFulfillmentService.closeSession(OFSSessionId);
+        closeOrderFulfillmentService(OFSSessionId);
+    }
 
-        Order order = new Order();
-        return orderDataService.save(order);
+    private void closeOrderFulfillmentService(UUID OFSSessionId) {
+        orderFulfillmentService.closeSession(OFSSessionId);
+    }
+
+    private UUID openOrderFulfillmentSession() {
+        return orderFulfillmentService.openSession(OFS_USERNAME,OFS_PASSWORD);
     }
 }
