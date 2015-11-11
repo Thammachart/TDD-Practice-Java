@@ -36,6 +36,12 @@ public class OrderService {
     private void placeOrderWithFulfillmentService(ShoppingCart shoppingCart, Customer customer) {
         UUID OFSSessionId = openOrderFulfillmentSession();
 
+        placeOrderWithFulfillmentService(OFSSessionId, customer, shoppingCart);
+
+        closeOrderFulfillmentService(OFSSessionId);
+    }
+
+    private void placeOrderWithFulfillmentService(UUID OFSSessionId, Customer customer, ShoppingCart shoppingCart) {
         ShoppingCartItem firstItem = shoppingCart.getItems().get(0);
 
         orderFulfillmentService.isInInventory(OFSSessionId,firstItem.getItemId(),firstItem.getQuantity());
@@ -43,8 +49,6 @@ public class OrderService {
         Map<UUID,Integer> orderForOFS = new TreeMap<>();
         orderForOFS.put(firstItem.getItemId(),firstItem.getQuantity());
         orderFulfillmentService.placeOrder(OFSSessionId,orderForOFS,customer.getShippingAddress().toString());
-
-        closeOrderFulfillmentService(OFSSessionId);
     }
 
     private void closeOrderFulfillmentService(UUID OFSSessionId) {
