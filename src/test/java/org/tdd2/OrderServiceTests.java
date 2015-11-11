@@ -107,4 +107,41 @@ public class OrderServiceTests {
         inOrder.verify(_mockedOrderFulfillmentServiceInterface).placeOrder(Mockito.eq(orderFulfillmentSessionId),Mockito.anyMapOf(UUID.class,Integer.class),Mockito.anyString());
         inOrder.verify(_mockedOrderFulfillmentServiceInterface).closeSession(orderFulfillmentSessionId);
     }
+
+    @Test
+    public void WhenUserPlacesCorrectOrderWithMoreThanOneItemAnOrderNumberBeReturned() {
+        ShoppingCartItem itemOne = new ShoppingCartItem(UUID.randomUUID(),1);
+        ShoppingCartItem itemTwo = new ShoppingCartItem(UUID.randomUUID(),4);
+
+        _shoppingCart.getItems().add(itemOne);
+        _shoppingCart.getItems().add(itemTwo);
+
+        UUID customerId = UUID.randomUUID();
+        UUID expectedOrderId = UUID.randomUUID();
+        UUID orderFulfillmentSessionId = UUID.randomUUID();
+
+        Customer customer = new Customer();
+        customer.setId(customerId);
+
+        Mockito.when(_mockedOrderDataServiceInterface.save(Mockito.any(Order.class)))
+                .thenReturn(expectedOrderId);
+        Mockito.when(_mockedCustomerServiceInterface.getCustomer(customerId))
+                .thenReturn(customer);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.openSession(Mockito.anyString(),Mockito.anyString()))
+                .thenReturn(orderFulfillmentSessionId);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.isInInventory(orderFulfillmentSessionId, itemOne.getItemId(), itemOne.getQuantity()))
+                .thenReturn(true);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.isInInventory(orderFulfillmentSessionId, itemTwo.getItemId(), itemTwo.getQuantity()))
+                .thenReturn(true);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.placeOrder(Mockito.eq(orderFulfillmentSessionId),Mockito.anyMapOf(UUID.class,Integer.class),Mockito.anyString()))
+                .thenReturn(true);
+
+        UUID result = _orderService.placeOrder(customerId,_shoppingCart);
+
+        Assert.assertEquals(expectedOrderId,result);
+        Mockito.verify(_mockedOrderDataServiceInterface,Mockito.times(1)).save(Mockito.any(Order.class));
+        Mockito.verify(_mockedCustomerServiceInterface,Mockito.times(1)).getCustomer(customerId);
+        Mockito.verify(_mockedOrderFulfillmentServiceInterface,Mockito.times(1)).isInInventory(orderFulfillmentSessionId, itemOne.getItemId(), itemOne.getQuantity());
+        Mockito.verify(_mockedOrderFulfillmentServiceInterface,Mockito.times(1)).isInInventory(orderFulfillmentSessionId, itemTwo.getItemId(), itemTwo.getQuantity());
+    }
 }

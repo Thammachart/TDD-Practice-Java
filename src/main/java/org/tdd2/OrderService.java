@@ -2,6 +2,7 @@ package org.tdd2;
 
 import org.tdd2.exceptions.InvalidOrderException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -42,13 +43,19 @@ public class OrderService {
     }
 
     private void placeOrderWithFulfillmentService(UUID OFSSessionId, Customer customer, ShoppingCart shoppingCart) {
-        ShoppingCartItem firstItem = shoppingCart.getItems().get(0);
-
-        orderFulfillmentService.isInInventory(OFSSessionId,firstItem.getItemId(),firstItem.getQuantity());
-
-        Map<UUID,Integer> orderForOFS = new TreeMap<>();
-        orderForOFS.put(firstItem.getItemId(),firstItem.getQuantity());
+        Map<UUID, Integer> orderForOFS = CheckInventoryLevels(OFSSessionId, shoppingCart);
         orderFulfillmentService.placeOrder(OFSSessionId,orderForOFS,customer.getShippingAddress().toString());
+    }
+
+    private Map<UUID, Integer> CheckInventoryLevels(UUID OFSSessionId, ShoppingCart shoppingCart) {
+        Map<UUID,Integer> orderForOFS = new TreeMap<>();
+
+        for (ShoppingCartItem item : shoppingCart.getItems()) {
+            orderFulfillmentService.isInInventory(OFSSessionId,item.getItemId(),item.getQuantity());
+            orderForOFS.put(item.getItemId(),item.getQuantity());
+        }
+
+        return orderForOFS;
     }
 
     private void closeOrderFulfillmentService(UUID OFSSessionId) {
