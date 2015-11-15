@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.stubbing.OngoingStubbing;
 import org.tdd2.exceptions.InvalidOrderException;
@@ -31,19 +32,35 @@ public class OrderServiceTests {
 
     @Test
     public void WhenUserPlacesACorrectOrderThenAnOrderNumberShouldBeReturned() {
-        _shoppingCart.getItems().add(new ShoppingCartItem(UUID.randomUUID(),1));
+        UUID itemId = UUID.randomUUID();
+        _shoppingCart.getItems().add(new ShoppingCartItem(itemId,1));
         UUID customerId = UUID.randomUUID();
         UUID expectedOrderId = UUID.randomUUID();
-        Mockito.when(_mockedOrderDataServiceInterface.save(Mockito.any(Order.class))).thenReturn(expectedOrderId);
-
+        UUID orderFulfillmentSessionId = UUID.randomUUID();
         Customer customer = new Customer();
         customer.setId(customerId);
-        Mockito.when(_mockedCustomerServiceInterface.getCustomer(customerId)).thenReturn(customer);
+
+        Mockito.when(_mockedOrderDataServiceInterface.save(Mockito.any(Order.class)))
+                .thenReturn(expectedOrderId);
+        Mockito.when(_mockedCustomerServiceInterface.getCustomer(customerId))
+                .thenReturn(customer);
+
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.openSession(Mockito.anyString(),Mockito.anyString()))
+                .thenReturn(orderFulfillmentSessionId);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.isInInventory(orderFulfillmentSessionId, itemId, 1))
+                .thenReturn(true);
+        Mockito.when(_mockedOrderFulfillmentServiceInterface.placeOrder(Mockito.eq(orderFulfillmentSessionId),Mockito.anyMapOf(UUID.class,Integer.class),Mockito.anyString()))
+                .thenReturn(true);
 
         UUID result = _orderService.placeOrder(customerId,_shoppingCart);
 
-        Mockito.verify(_mockedOrderDataServiceInterface,Mockito.times(1)).save(Mockito.any(Order.class));
+
         Assert.assertEquals(expectedOrderId,result);
+        Mockito.verify(_mockedOrderDataServiceInterface,Mockito.times(1)).save(Mockito.any(Order.class));
+        Mockito.verify(_mockedCustomerServiceInterface,Mockito.times(1)).getCustomer(customerId);
+        Mockito.verify(_mockedOrderFulfillmentServiceInterface,Mockito.times(1)).openSession(Mockito.anyString(),Mockito.anyString());
+        Mockito.verify(_mockedOrderFulfillmentServiceInterface,Mockito.times(1)).isInInventory(orderFulfillmentSessionId, itemId, 1);
+        Mockito.verify(_mockedOrderFulfillmentServiceInterface,Mockito.times(1)).placeOrder(Mockito.eq(orderFulfillmentSessionId),Mockito.anyMapOf(UUID.class,Integer.class),Mockito.anyString());
     }
 
     @Test
